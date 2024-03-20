@@ -6,9 +6,9 @@ type service struct {
 	repo repository
 }
 
-func (srv *service) GetProduct(id uuid.UUID) (*Product, error) {
+func (srv *service) GetProduct(id uuid.UUID) (*product, error) {
 	return srv.repo.GetProduct(id)
 }
-func (srv *service) AddProduct(product *Product) error {
+func (srv *service) AddProduct(product *product) error {
 	return srv.repo.AddProduct(product)
 }

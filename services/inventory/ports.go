@@ -7,10 +7,10 @@ import (
 )
 
 type repository interface {
-	AddProduct(*Product) error
-	GetProduct(uuid.UUID) (*Product, error)
+	AddProduct(*product) error
+	GetProduct(uuid.UUID) (*product, error)
 }
 type serviceApi interface {
-	AddProduct(context.Context, *Product) error
-	GetProduct(context.Context, uuid.UUID) (Product, error)
+	AddProduct(context.Context, *product) error
+	GetProduct(context.Context, uuid.UUID) (product, error)
 }
