@@ -1,0 +1,25 @@
+syntax = "proto3";
+package proto;
+option go_package = "github.com/lafetz/inventory-grpc/proto";
+message Product {
+  string id = 1;
+  string title = 2;
+  string description = 3;
+}
+message AddProductReq {
+  string title = 1;
+  string description = 2;
+}
+message AddProductRes {
+  Product Product = 1;
+}
+message GetProductReq {
+  string id = 1;
+}
+message GetProductRes {
+  Product Product = 1;
+}
+service InventoryService {
+  rpc AddProduct(AddProductReq) returns (AddProductRes);
+  rpc GetProduct(GetProductReq) returns (GetProductRes);
+}

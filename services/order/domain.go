@@ -7,4 +7,5 @@ type order struct {
 	ProductId uuid.UUID
 	Price     float32
 	Quantity  int32
+	Status    string
 }
