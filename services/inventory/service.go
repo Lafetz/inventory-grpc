@@ -1,19 +1,20 @@
 package inventory
 
-import "github.com/google/uuid"
+import (
+	"context"
+
+	"github.com/google/uuid"
+)
 
 type service struct {
 	repo repository
 }
 
-func (srv *service) DecProduct(id uuid.UUID, quanitty int32) error {
-	return srv.repo.DecProduct(id, quanitty)
+func (srv *service) GetProduct(ctx context.Context, id uuid.UUID) (*product, error) {
+	return srv.repo.GetProduct(ctx, id)
 }
-func (srv *service) GetProduct(id uuid.UUID) (*product, error) {
-	return srv.repo.GetProduct(id)
-}
-func (srv *service) AddProduct(title string, desc string) (*product, error) {
-	return srv.repo.AddProduct(title, desc)
+func (srv *service) AddProduct(ctx context.Context, title string, desc string) (*product, error) {
+	return srv.repo.AddProduct(ctx, title, desc)
 }
 func NewService(repo repository) *service {
 	return &service{
