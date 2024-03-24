@@ -27,17 +27,17 @@ func (s *store) AddProduct(ctx context.Context, title string, desc string) (*pro
 	return product, nil
 }
 func (s *store) GetProduct(ctx context.Context, id uuid.UUID) (*product, error) {
-	var result bson.M
-	err := s.productCollection.FindOne(context.TODO(), bson.D{{Key: "id", Value: id}}).Decode(&result)
+	var result product
+	err := s.productCollection.FindOne(ctx, bson.D{{Key: "id", Value: id}}).Decode(&result)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, ErrProductNotFound
 		}
-		fmt.Print(err)
+		fmt.Println(err)
 		return nil, err
 	}
-	fmt.Printf(`%s`, result)
-	return &product{Id: id, Title: "hello", Description: "world hello"}, nil
+
+	return &product{Id: id, Title: result.Title, Description: result.Description}, nil
 }
 
 func NewDb() *store {
