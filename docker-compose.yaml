@@ -11,6 +11,12 @@ services:
       - MONGO_INITDB_DATABASE=inventory
       - MONGO_INITDB_ROOT_USERNAME=admin
       - MONGO_INITDB_ROOT_PASSWORD=admin11
-
+  consul:
+    image: hashicorp/consul:1.11.2
+    ports:
+      - 8500:8500
+networks:
+  consul:
+    driver: bridge
 volumes:
   my-data:
