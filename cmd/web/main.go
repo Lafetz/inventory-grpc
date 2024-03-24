@@ -10,6 +10,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/lafetz/inventory-grpc/proto"
+	"github.com/sony/gobreaker"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -22,6 +23,20 @@ type createProductBody struct {
 }
 
 func main() {
+	//Circuit Breaker
+	cb := gobreaker.NewCircuitBreaker(gobreaker.Settings{
+		Name:        "inventory-call",
+		MaxRequests: 1,
+		Timeout:     10,
+		ReadyToTrip: func(counts gobreaker.Counts) bool {
+			failureRatio := float64(counts.TotalFailures) / float64(counts.Requests)
+			return counts.Requests >= 3 && failureRatio >= 0.6
+		},
+		OnStateChange: func(name string, from gobreaker.State, to gobreaker.State) {
+			log.Printf("Circuit Breaker: %s, changed from %v, to %v", name, from, to)
+		},
+	})
+	//
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(grpc_retry.WithCodes(codes.Internal), grpc_retry.WithMax(5), grpc_retry.WithBackoff(grpc_retry.BackoffLinear(time.Second)))))
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -36,7 +51,9 @@ func main() {
 	g.GET("/products/:id", func(ctx *gin.Context) {
 		id := ctx.Param("id")
 		req := &proto.GetProductReq{Id: id}
-		res, err := client.GetProduct(ctx, req)
+		res, err := cb.Execute(func() (interface{}, error) {
+			return client.GetProduct(ctx, req)
+		}) // client.GetProduct(ctx, req)
 		if err != nil {
 			st, _ := status.FromError(err)
 			ctx.JSON(400, gin.H{
@@ -44,8 +61,7 @@ func main() {
 			})
 			return
 		}
-
-		ctx.String(200, fmt.Sprint(res.Product))
+		ctx.String(200, fmt.Sprint(res.(*proto.GetProductRes).Product))
 
 	})
 	g.POST("/products", func(ctx *gin.Context) {
