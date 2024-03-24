@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
+	"github.com/hashicorp/consul/api"
 	"github.com/lafetz/inventory-grpc/proto"
 	"github.com/sony/gobreaker"
 	"google.golang.org/grpc"
@@ -27,7 +29,13 @@ func main() {
 	opts = append(opts, grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(grpc_retry.WithCodes(codes.Internal), grpc_retry.WithMax(5), grpc_retry.WithBackoff(grpc_retry.BackoffLinear(time.Second)))))
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	//
-	conn, err := grpc.Dial("localhost:8080", opts...)
+	address, port, err := getAddress()
+	if err != nil {
+		log.Fatal("couldn't get grpc server address")
+	}
+	//
+	conn, err := grpc.Dial(address+":"+strconv.Itoa(port), opts...)
+
 	//
 	if err != nil {
 		log.Fatalln("Failed to dial:", err)
@@ -106,4 +114,31 @@ func (s *server) postHandler(ctx *gin.Context) {
 
 	ctx.String(200, fmt.Sprint(res.Product))
 
+}
+func getAddress() (string, int, error) {
+	config := api.DefaultConfig()
+	config.Address = "http://localhost:8500" // Replace with Consul server address
+	client, err := api.NewClient(config)
+	if err != nil {
+		fmt.Println("Error creating Consul client:", err)
+		return "", 0, err
+	}
+	serviceName := "inventoryGrpc"
+	catalog := client.Catalog() //()
+	service, _, err := catalog.Service(serviceName, "", nil)
+	if err != nil {
+		fmt.Println("Error retrieving service:", err)
+		return "", 0, err
+	}
+
+	// Check for healthy instances
+	if len(service) == 0 {
+		fmt.Println("No healthy instances found for service:", serviceName)
+		return "", 0, err
+	}
+
+	// Get the first healthy instance's IP address
+	ipAddress := service[0].Address
+	port := service[0].ServicePort
+	return ipAddress, port, nil
 }

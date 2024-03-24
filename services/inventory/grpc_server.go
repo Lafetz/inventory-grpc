@@ -53,6 +53,7 @@ func (s *InventoryServer) GetProduct(ctx context.Context, req *proto.GetProductR
 }
 func NewInventoryServer(srv serviceApi, port int) *InventoryServer {
 	client, err := api.NewClient(&api.Config{})
+
 	if err != nil {
 		log.Fatal("couldn't create consul client", err)
 	}
